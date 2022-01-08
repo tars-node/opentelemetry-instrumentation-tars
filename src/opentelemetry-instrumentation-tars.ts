@@ -1,5 +1,5 @@
+import { propagation, TracerProvider, Sampler } from "@opentelemetry/api"
 import { AlwaysOnSampler } from "@opentelemetry/core"
-import { propagation } from "@opentelemetry/api"
 import { SpanProcessor, BasicTracerProvider, SimpleSpanProcessor } from "@opentelemetry/sdk-trace-base"
 import { AsyncHooksContextManager, AsyncLocalStorageContextManager } from "@opentelemetry/context-async-hooks"
 import { registerInstrumentations } from "@opentelemetry/instrumentation"
@@ -13,10 +13,9 @@ propagation.setGlobalPropagator(new TarsPropagation())
 class TarsInstrumentation{
     private _contextManager = AsyncHooksContextManager ? new AsyncHooksContextManager(): new AsyncLocalStorageContextManager()
     private _tracePlugin = new TarsInstrumentationPlugin()
-    private _tracerProvider = new BasicTracerProvider({
-        // 默认持续采样
-        sampler: new AlwaysOnSampler(),
-    })
+    private _sampler:Sampler
+    private _traceProvider:BasicTracerProvider
+
     private _spanProcessors:Array<SpanProcessor> = []
     
     public get tracePlugin(){return this._tracePlugin}
@@ -25,17 +24,23 @@ class TarsInstrumentation{
 
     public set disablePlugin(value){ this._tracePlugin.disablePlugin = value}
 
-    public get tracerProvider(){ return this._tracerProvider}
+    public get sampler(){ return this._sampler}
 
-    public set tracerProvider(value){ this._tracerProvider = value}
+    public set sampler(value){ this._sampler = value}
 
     public get spanProcessors(){ return this._spanProcessors}
 
     public set spanProcessors(value){ this._spanProcessors = value}
 
     public start(){
+        // 默认持续采样
+        if(!this._sampler) this._sampler = new AlwaysOnSampler()
+        this._traceProvider = new BasicTracerProvider({
+            // 默认持续采样
+            sampler: this._sampler,
+        })
         //开启异步上下文管理器
-        this._tracerProvider.register({
+        this._traceProvider.register({
             contextManager: this._contextManager.enable(),
         })
         //支持传入exporter，若未传入，默认上报到tars trace
@@ -45,10 +50,10 @@ class TarsInstrumentation{
             this._spanProcessors = [new SimpleSpanProcessor(new TarsSpanExporter())]
         }
         for(let processer of this._spanProcessors){
-            this._tracerProvider.addSpanProcessor(processer)
+            this._traceProvider.addSpanProcessor(processer)
         }
         registerInstrumentations({
-            tracerProvider: this._tracerProvider,
+            tracerProvider: this._traceProvider,
             instrumentations: [this._tracePlugin]
         })
     }

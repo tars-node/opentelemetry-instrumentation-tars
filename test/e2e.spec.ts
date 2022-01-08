@@ -6,7 +6,6 @@ Instrumentation.spanProcessors = [new SimpleSpanProcessor(new TestSpanExporter()
 Instrumentation.start()
 import server1 from "./utils/server1"
 import server2 from "./utils/server2"
-import "./test"
 import * as TarsRpc from "@tars/rpc"
 import { Hello } from "./utils/protocol/HelloProxy"
 const proxy = TarsRpc.client.stringToProxy(Hello.DemoProxy, "Hello.Server.DemoObj@tcp -h 127.0.0.1 -p 20001 -t 60000")
