@@ -1,0 +1,19 @@
+module Hello
+{
+
+    struct TestReq{
+        0 optional string sName;
+        1 optional int iAge;
+    };
+
+    struct TestRsp{
+        0 optional int iRet;
+        1 optional string sMsg;
+    };
+
+    interface Demo
+    {
+        int testFn(int iLen, string sName, TestReq stReq, out int iWidth, out string sFullName, out TestRsp stRsp);
+    };
+
+}; 
